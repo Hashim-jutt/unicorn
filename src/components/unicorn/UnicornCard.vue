@@ -76,8 +76,8 @@ function toggleDetails() {
       <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <!-- Primary info -->
         <div
-          class="grid gap-x-4 gap-y-1 text-xs sm:text-[13px] md:gap-x-5 md:gap-y-0
-                 grid-cols-[auto_minmax(0,1.6fr)_auto_auto_auto]"
+          class="grid gap-x-4 gap-y-2 text-xs sm:text-[13px] md:gap-x-5 md:gap-y-0
+                 grid-cols-2 sm:grid-cols-[auto_minmax(0,1.6fr)_auto_auto_auto]"
         >
           <div class="text-slate-500">
             <p class="text-[11px] uppercase tracking-wide text-slate-400">No</p>
@@ -85,7 +85,7 @@ function toggleDetails() {
               {{ (currentPage - 1) * pageSize + index + 1 }}
             </p>
           </div>
-          <div>
+          <div class="col-span-1 sm:col-auto">
             <p class="text-[11px] uppercase tracking-wide text-slate-400">Doctor Name</p>
             <p class="font-semibold text-slate-900">
               {{ unicorn.name || '—' }}

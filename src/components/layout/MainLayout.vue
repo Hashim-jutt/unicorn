@@ -20,7 +20,7 @@ function closeSidebar() {
 </script>
 
 <template>
-  <div class="relative flex min-h-screen bg-slate-100 text-slate-900">
+  <div class="relative flex h-screen overflow-hidden bg-slate-100 text-slate-900">
     <AppSidebar :open="sidebarOpen">
       <template #logo>
         <IconSidebarLogo />
@@ -46,9 +46,9 @@ function closeSidebar() {
       @click="closeSidebar"
     />
 
-    <div class="flex flex-1 flex-col">
+    <div class="flex flex-1 min-w-0 flex-col">
       <AppHeader @create="emit('create')" />
-      <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+      <main class="mx-auto w-full max-w-6xl flex-1 overflow-y-auto px-4 py-6">
         <slot />
       </main>
     </div>

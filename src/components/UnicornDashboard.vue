@@ -3,12 +3,15 @@ import { onMounted, ref, computed, defineExpose } from 'vue'
 import { fetchUnicorns, createUnicorn, updateUnicorn, deleteUnicorn } from '../services/unicornApi'
 import UnicornCard from './unicorn/UnicornCard.vue'
 import UnicornFormModal from './unicorn/UnicornFormModal.vue'
+import { useToast } from '../composables/useToast'
 
 const unicorns = ref([])
 const loading = ref(false)
 const error = ref('')
 const currentPage = ref(1)
 const pageSize = 5
+
+const { showToast } = useToast()
 
 const sortField = ref('name')
 const sortDirection = ref('asc')
@@ -44,15 +47,6 @@ const totalPages = computed(() => Math.max(1, Math.ceil(sortedUnicorns.value.len
 const paginatedUnicorns = computed(() => {
   const start = (currentPage.value - 1) * pageSize
   return sortedUnicorns.value.slice(start, start + pageSize)
-})
-
-const isFormValid = computed(() => {
-  // Check if all fields pass validation
-  const nameValid = !validateName(form.value.name)
-  const ageValid = !validateAge(form.value.age)
-  const colorValid = !validateColor(form.value.color)
-  
-  return nameValid && ageValid && colorValid
 })
 
 function toggleSort(field) {
@@ -98,16 +92,29 @@ async function handleSave(payload) {
     if (editingUnicorn.value && editingUnicorn.value._id) {
       await updateUnicorn(editingUnicorn.value._id, payload)
       await loadUnicorns()
+      showToast({
+        type: 'success',
+        title: 'Unicorn updated',
+        message: `"${payload.name}" saved successfully.`,
+      })
     } else {
       const created = await createUnicorn(payload)
       unicorns.value.push(created)
+      showToast({
+        type: 'success',
+        title: 'Unicorn created',
+        message: `"${payload.name}" added to the database.`,
+      })
     }
     editingUnicorn.value = null
     closeModal()
   } catch (e) {
     console.error(e)
-    // Surface a generic error; UI could be enhanced with a toast component
-    alert('Failed to save unicorn. Please try again.')
+    showToast({
+      type: 'error',
+      title: 'Save failed',
+      message: 'Failed to save unicorn. Please try again.',
+    })
   } finally {
     submitting.value = false
   }
@@ -118,9 +125,18 @@ async function handleDelete(unicorn) {
   try {
     await deleteUnicorn(unicorn._id)
     unicorns.value = unicorns.value.filter((u) => u._id !== unicorn._id)
+    showToast({
+      type: 'error',
+      title: 'Unicorn deleted',
+      message: `"${unicorn.name}" deleted from the database.`,
+    })
   } catch (e) {
     console.error(e)
-    alert('Failed to delete unicorn.')
+    showToast({
+      type: 'error',
+      title: 'Delete failed',
+      message: 'Failed to delete unicorn.',
+    })
   }
 }
 
@@ -137,7 +153,7 @@ defineExpose({
 <template>
   <div>
     <!-- List section styled like the Figma cards -->
-    <section class="p-5">
+    <section class="px-3 py-4 sm:p-5">
       <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
         <div class="ml-auto flex items-center gap-2 text-xs sm:text-sm">
