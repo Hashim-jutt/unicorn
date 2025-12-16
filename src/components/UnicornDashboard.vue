@@ -3,6 +3,7 @@ import { onMounted, ref, computed, defineExpose } from 'vue'
 import { fetchUnicorns, createUnicorn, updateUnicorn, deleteUnicorn } from '../services/unicornApi'
 import UnicornCard from './unicorn/UnicornCard.vue'
 import UnicornFormModal from './unicorn/UnicornFormModal.vue'
+import DeleteConfirmModal from './unicorn/DeleteConfirmModal.vue'
 import { useToast } from '../composables/useToast'
 
 const unicorns = ref([])
@@ -20,6 +21,11 @@ const sortDirection = ref('asc')
 const showModal = ref(false)
 const editingUnicorn = ref(null)
 const submitting = ref(false)
+
+// Delete modal state
+const showDeleteModal = ref(false)
+const deletingUnicorn = ref(null)
+const deleting = ref(false)
 
 const sortedUnicorns = computed(() => {
   const list = [...unicorns.value]
@@ -120,16 +126,29 @@ async function handleSave(payload) {
   }
 }
 
-async function handleDelete(unicorn) {
-  if (!confirm(`Delete ${unicorn.name}?`)) return
+function handleDelete(unicorn) {
+  deletingUnicorn.value = unicorn
+  showDeleteModal.value = true
+}
+
+function closeDeleteModal() {
+  showDeleteModal.value = false
+  deletingUnicorn.value = null
+}
+
+async function confirmDelete() {
+  if (!deletingUnicorn.value) return
+  
+  deleting.value = true
   try {
-    await deleteUnicorn(unicorn._id)
-    unicorns.value = unicorns.value.filter((u) => u._id !== unicorn._id)
+    await deleteUnicorn(deletingUnicorn.value._id)
+    unicorns.value = unicorns.value.filter((u) => u._id !== deletingUnicorn.value._id)
     showToast({
       type: 'error',
       title: 'Unicorn deleted',
-      message: `"${unicorn.name}" deleted from the database.`,
+      message: `"${deletingUnicorn.value.name}" deleted from the database.`,
     })
+    closeDeleteModal()
   } catch (e) {
     console.error(e)
     showToast({
@@ -137,6 +156,8 @@ async function handleDelete(unicorn) {
       title: 'Delete failed',
       message: 'Failed to delete unicorn.',
     })
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -254,6 +275,14 @@ defineExpose({
       :initial-unicorn="editingUnicorn"
       :submitting="submitting"
       @save="handleSave"
+    />
+
+    <!-- Delete confirmation modal -->
+    <DeleteConfirmModal
+      v-model="showDeleteModal"
+      :unicorn="deletingUnicorn"
+      :deleting="deleting"
+      @confirm="confirmDelete"
     />
   </div>
 </template>

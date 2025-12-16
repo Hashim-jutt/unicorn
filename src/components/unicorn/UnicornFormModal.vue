@@ -30,6 +30,11 @@ const fieldErrors = ref({
   age: '',
   color: '',
 })
+const touchedFields = ref({
+  name: false,
+  age: false,
+  color: false,
+})
 
 watch(
   () => props.initialUnicorn,
@@ -47,10 +52,20 @@ watch(
   { immediate: true }
 )
 
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (!isOpen) {
+      resetForm()
+    }
+  }
+)
+
 function resetForm() {
   form.value = { name: '', age: '', color: '' }
   formError.value = ''
   fieldErrors.value = { name: '', age: '', color: '' }
+  touchedFields.value = { name: false, age: false, color: false }
 }
 
 function validateName(name) {
@@ -79,7 +94,11 @@ function validateColor(color) {
   return ''
 }
 
-function validateForm() {
+function validateForm(markAllTouched = false) {
+  if (markAllTouched) {
+    touchedFields.value = { name: true, age: true, color: true }
+  }
+  
   fieldErrors.value.name = validateName(form.value.name)
   fieldErrors.value.age = validateAge(form.value.age)
   fieldErrors.value.color = validateColor(form.value.color)
@@ -94,7 +113,24 @@ function clearFieldError(field) {
   formError.value = ''
 }
 
-const isFormValid = computed(() => validateForm())
+function handleFieldBlur(field) {
+  touchedFields.value[field] = true
+  if (field === 'name') {
+    fieldErrors.value.name = validateName(form.value.name)
+  } else if (field === 'age') {
+    fieldErrors.value.age = validateAge(form.value.age)
+  } else if (field === 'color') {
+    fieldErrors.value.color = validateColor(form.value.color)
+  }
+}
+
+const isFormValid = computed(() => {
+  // Only validate for form validity check, don't show errors for untouched fields
+  const nameError = validateName(form.value.name)
+  const ageError = validateAge(form.value.age)
+  const colorError = validateColor(form.value.color)
+  return !nameError && !ageError && !colorError
+})
 
 function close() {
   emit('update:modelValue', false)
@@ -103,7 +139,7 @@ function close() {
 function handleSubmit() {
   formError.value = ''
 
-  if (!validateForm()) {
+  if (!validateForm(true)) {
     return
   }
 
@@ -133,15 +169,15 @@ function handleSubmit() {
             type="text"
             :class="[
               'mt-2 w-full rounded-xl border px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2',
-              fieldErrors.name
+              touchedFields.name && fieldErrors.name
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
                 : 'border-slate-200 focus:border-[#4E46B4] focus:ring-violet-100'
             ]"
             placeholder="Write Name"
             @input="clearFieldError('name')"
-            @blur="fieldErrors.name = validateName(form.name)"
+            @blur="handleFieldBlur('name')"
           />
-          <p v-if="fieldErrors.name" class="mt-1 text-xs text-red-600">
+          <p v-if="touchedFields.name && fieldErrors.name" class="mt-1 text-xs text-red-600">
             {{ fieldErrors.name }}
           </p>
           <p v-else class="mt-1 text-xs text-slate-400">This is the unicorn name</p>
@@ -155,15 +191,15 @@ function handleSubmit() {
             min="0"
             :class="[
               'mt-2 w-full rounded-xl border px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2',
-              fieldErrors.age
+              touchedFields.age && fieldErrors.age
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
                 : 'border-slate-200 focus:border-[#4E46B4] focus:ring-violet-100'
             ]"
             placeholder="Write age"
             @input="clearFieldError('age')"
-            @blur="fieldErrors.age = validateAge(form.age)"
+            @blur="handleFieldBlur('age')"
           />
-          <p v-if="fieldErrors.age" class="mt-1 text-xs text-red-600">
+          <p v-if="touchedFields.age && fieldErrors.age" class="mt-1 text-xs text-red-600">
             {{ fieldErrors.age }}
           </p>
         </div>
@@ -175,15 +211,15 @@ function handleSubmit() {
             type="text"
             :class="[
               'mt-2 w-full rounded-xl border px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2',
-              fieldErrors.color
+              touchedFields.color && fieldErrors.color
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
                 : 'border-slate-200 focus:border-[#4E46B4] focus:ring-violet-100'
             ]"
             placeholder="Write color"
             @input="clearFieldError('color')"
-            @blur="fieldErrors.color = validateColor(form.color)"
+            @blur="handleFieldBlur('color')"
           />
-          <p v-if="fieldErrors.color" class="mt-1 text-xs text-red-600">
+          <p v-if="touchedFields.color && fieldErrors.color" class="mt-1 text-xs text-red-600">
             {{ fieldErrors.color }}
           </p>
         </div>
